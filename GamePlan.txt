@@ -1,0 +1,30 @@
+---------------------------------------Idea: -----------------------------------------
+A game where you fight against many enemies in "Odd Jobs". 
+Weapons are made on the spot using Scrap Metal collected around the map and sometimes dropped when enemies are killed (The scrap metal is dropped, not the weapon)
+
+
+---------------------------------------Day 1: ----------------------------------------- (Achieved)
+- Working camera
+- Working map
+- Working player with controls
+
+---------------------------------------Day 2: -----------------------------------------
+- UI
+- Working odd job end mission screen (Shows a new job added to the resume)
+- Shows objectives
+- Working mechanics
+
+---------------------------------------Day 3: -----------------------------------------
+
+---------------------------------------Day 4: -----------------------------------------
+
+---------------------------------------Day 5: -----------------------------------------
+
+---------------------------------------Day 6: -----------------------------------------
+
+---------------------------------------Final Day (4 hours): -----------------------------------------
+
+Scratch all that..! The above will take WAY too long to make, the Jam Entry wouldn't have been finished in time.
+
+---------------------------------------Idea: -----------------------------------------
+A game where you live in a scrap yard and hostile creatures have invaded it. You shoot at them to destory them all the way until you get to the main invador, known as The Trash.
