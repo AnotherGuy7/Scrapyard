@@ -1,8 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Tight_Budget
 {
@@ -29,6 +26,7 @@ namespace Tight_Budget
         public override void HandleCollisions(CollisionBody collider, CollisionType colliderType)
         {
             Main.playerScrap += 1;
+            Main.collectedScrap += 1;
             DestroyInstance();
         }
 

@@ -30,13 +30,26 @@ namespace Tight_Budget
         {
             if (nextMap)
             {
+                if (Map.activeMapIndex >= 19)
+                {
+                    Main.stopUpdates = true;
+                    Main.gameState = Main.GameState.GameOver;
+                    Main.gameWon = true;
+                    return;
+                }
                 Map.LoadNextMap();
                 Main.player.position = Map.currentEntrance.position + Map.currentEntrance.playerSpawnOffset;
+                //Main.CheckZoomLimits();
+                Main.UpdateCamera(Main.player.position);
+                Main.player.immunityTimer = 80;
             }
             else
             {
                 Map.LoadPreviousMap();
                 Main.player.position = Map.currentExit.position + Map.currentExit.playerSpawnOffset;
+                //Main.CheckZoomLimits();
+                Main.UpdateCamera(Main.player.position);
+                Main.player.immunityTimer = 80;
             }
         }
     }

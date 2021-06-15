@@ -16,6 +16,7 @@ namespace Tight_Budget.Projectiles
 
         private Vector2 velocity;
         private float bulletRotation;
+        private float lifeTimer = 0;
 
         public static void NewBullet(Vector2 position, Vector2 velocity)
         {
@@ -29,6 +30,11 @@ namespace Tight_Budget.Projectiles
 
         public override void Update()
         {
+            lifeTimer++;
+            if (lifeTimer >= 10 * 60)
+            {
+                DestroyInstance();
+            }
             position += velocity;
             hitbox.X = (int)position.X;
             hitbox.Y = (int)position.Y;

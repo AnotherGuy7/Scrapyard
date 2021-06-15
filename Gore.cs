@@ -9,6 +9,7 @@ namespace Tight_Budget
 
         public const int TrashGore = 0;
         public const int GarbageGore = 1;
+        public const int TankGore = 2;
 
         private int goreType = 0;
         private Vector2 gorePosition;

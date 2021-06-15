@@ -7,5 +7,11 @@ namespace Tight_Budget.Enemies
         public virtual int startingHealth { get; }
 
         public Vector2 center;
+
+        public new void DestroyInstance()
+        {
+            Main.amountOfEnemiesKilled += 1;
+            Main.entitiesList.Remove(this);
+        }
     }
 }

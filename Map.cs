@@ -63,6 +63,8 @@ namespace Tight_Budget
 
         public static int[][,] availableStructues = new int[5][,] { structure1, structure2, structure3, structure4, structure5 };
 
+        private const float spawnDistance = 28f;
+
         public static void Update()
         {
             if (currentEntrance != null)
@@ -81,11 +83,11 @@ namespace Tight_Budget
             int exitPlacement = 1;
             if (exitOnColumn)
             {
-                exitPlacement = Main.random.Next(1, maxRoomWidth);
+                exitPlacement = Main.random.Next(2, maxRoomWidth - 1);
             }
             else
             {
-                exitPlacement = Main.random.Next(1, maxRoomHeight);
+                exitPlacement = Main.random.Next(2, maxRoomHeight - 1);
             }
             int exitDirection = Main.random.Next(0, 2);
 
@@ -96,9 +98,9 @@ namespace Tight_Budget
             {
                 entranceOnColumn = exits[generationIndex - 1].position.X == 0f || exits[generationIndex - 1].position.X == mapDimensions[generationIndex - 1].X / 16f;
                 if (entranceOnColumn)
-                    entrancePlacement = Main.random.Next(1, maxRoomWidth);
+                    entrancePlacement = Main.random.Next(2, maxRoomWidth - 1);
                 else
-                    entrancePlacement = Main.random.Next(1, maxRoomHeight);
+                    entrancePlacement = Main.random.Next(2, maxRoomHeight - 1);
 
                 if (exits[generationIndex - 1].position.X == 0f || exits[generationIndex - 1].position.Y == 0f)
                     entranceDirection = 1;
@@ -153,12 +155,12 @@ namespace Tight_Budget
                             if (exitDirection == 0)
                             {
                                 map[column, row].rotation = 180f;
-                                spawnOffset = new Vector2(0f, 32f);
+                                spawnOffset = new Vector2(0f, spawnDistance);
                             }
                             else
                             {
                                 map[column, row].rotation = 0f;
-                                spawnOffset = new Vector2(0f, -32f);
+                                spawnOffset = new Vector2(0f, -spawnDistance);
                             }
                             exits[generationIndex] = MapTransition.NewMapTransition(new Vector2(column * 16f, row * 16f), spawnOffset, true);
                         }
@@ -177,12 +179,12 @@ namespace Tight_Budget
                             if (exitDirection == 0)
                             {
                                 map[column, row].rotation = 90f;
-                                spawnOffset = new Vector2(32f, 0f);
+                                spawnOffset = new Vector2(spawnDistance, 0f);
                             }
                             else
                             {
                                 map[column, row].rotation = 270f;
-                                spawnOffset = new Vector2(-32f, 0f);
+                                spawnOffset = new Vector2(-spawnDistance, 0f);
                             }
                             exits[generationIndex] = MapTransition.NewMapTransition(new Vector2(column * 16f, row * 16f), spawnOffset, true);
                         }
@@ -206,12 +208,12 @@ namespace Tight_Budget
                             if (entranceDirection == 0)
                             {
                                 map[column, row].rotation = 180f;
-                                spawnOffset = new Vector2(0f, 32f);
+                                spawnOffset = new Vector2(0f, spawnDistance);
                             }
                             else
                             {
                                 map[column, row].rotation = 0f;
-                                spawnOffset = new Vector2(0f, -32f);
+                                spawnOffset = new Vector2(0f, -spawnDistance);
                             }
                             entrances[generationIndex] = MapTransition.NewMapTransition(new Vector2(column * 16f, row * 16f), spawnOffset, false);
                         }
@@ -229,12 +231,12 @@ namespace Tight_Budget
                                 if (entranceDirection == 0)
                                 {
                                     map[column, row].rotation = 90f;
-                                    spawnOffset = new Vector2(32f, 0f);
+                                    spawnOffset = new Vector2(spawnDistance, 0f);
                                 }
                                 else
                                 {
                                     map[column, row].rotation = 270f;
-                                    spawnOffset = new Vector2(-32f, 0f);
+                                    spawnOffset = new Vector2(-spawnDistance, 0f);
                                 }
                                 entrances[generationIndex] = MapTransition.NewMapTransition(new Vector2(column * 16f, row * 16f), spawnOffset, false);
                             }
@@ -289,21 +291,33 @@ namespace Tight_Budget
 
         public static List<object> GenerateExtras(int generationIndex, int maxRoomWidth, int maxRoomHeight)
         {
-            int amountOfObjects = Main.random.Next(4, 8 + 1);
+            int amountOfScrap = Main.random.Next(2, 4 + 1);
+            if (generationIndex == 0)
+                amountOfScrap = Main.random.Next(5, 8 + 1);
             int amountOfEnemies = Main.random.Next(5, 12 + 1); 
             List<object> objectsList = new List<object>();
-            for (int i = 0; i < amountOfObjects; i++)
+            for (int i = 0; i < amountOfScrap; i++)
             {
-                float posX = Main.random.Next(16, maxRoomWidth * 16);
-                float posY = Main.random.Next(16, maxRoomHeight * 16);
+                float posX = Main.random.Next(1, maxRoomWidth);
+                float posY = Main.random.Next(1, maxRoomHeight);
                 Vector2 pos = new Vector2(posX, posY);
-                objectsList.Add(ScrapMetal.NewScrapMetal(pos));
+                Point positionPoint = pos.ToPoint();
+
+                while (generatedMapsArray[generationIndex][positionPoint.X, positionPoint.Y].collisionStyle == Tile.CollisionStyle.Solid)
+                {
+                    posX = Main.random.Next(1, maxRoomWidth);
+                    posY = Main.random.Next(1, maxRoomHeight);
+                    pos = new Vector2(posX, posY);
+                    positionPoint = pos.ToPoint();
+                }
+
+                objectsList.Add(ScrapMetal.NewScrapMetal(pos * 16f));
             }
             if (generationIndex != 0)
             {
                 for (int i = 0; i < amountOfEnemies; i++)
                 {
-                    int type = Main.random.Next(0, 1 + 1);
+                    int type = Main.random.Next(0, 2 + 1);
                     float posX = Main.random.Next(1, maxRoomWidth);     //This is in TILE indexes, so we convert that to map coordinates at spawn
                     float posY = Main.random.Next(1, maxRoomHeight);
                     Vector2 pos = new Vector2(posX, posY);
@@ -321,6 +335,8 @@ namespace Tight_Budget
                         objectsList.Add(FlyingTrashBag.NewFlyingTrashBag(pos * 16f));
                     if (type == 1)
                         objectsList.Add(MechanizedGarbage.NewMechanizedGarbage(pos * 16f));
+                    if (type == 2)
+                        objectsList.Add(TrashTank.NewTrashTank(pos * 16f));
                 }
             }
 
@@ -329,8 +345,10 @@ namespace Tight_Budget
 
         public static void GenerateWholeMap()
         {
-            int amountOfRooms = 7;
+            int amountOfRooms = 21;
+            activeMapIndex = 0;
             generatedMapsArray = new Tile[amountOfRooms][,];
+            generatedMapObjects = new List<List<object>>();
             mapDimensions = new Vector2[amountOfRooms];
             entrances = new MapTransition[amountOfRooms];
             exits = new MapTransition[amountOfRooms];

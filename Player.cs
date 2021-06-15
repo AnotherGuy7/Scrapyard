@@ -15,15 +15,17 @@ namespace Tight_Budget
 
         public static Texture2D[] playerWalkingSpritesheets;
         public static Texture2D[] playerIdleSpritesheets;
-        public static Texture2D playerGunTexture;
-        public static SoundEffect gunShotSound;
+        public static Texture2D[] playerGunTextures;
+        public static SoundEffect[] gunShotSounds;
 
         public const float moveSpeed = 1.3f;
         public const int PlayerWidth = 13;
         public const int PlayerHeight = 25;
         public const float GunRadius = 18f;
 
-        private Vector2 playerCenter;
+        public Vector2 playerCenter;
+        public int immunityTimer = 0;
+
         private Rectangle animRect;
         private Texture2D currentSheet;
         private int frame = 0;
@@ -33,7 +35,9 @@ namespace Tight_Budget
         private int shootTimer = 0;
         private Vector2 gunPosition;
         private float gunRotation;
-        private int immunityTimer = 0;
+        private int collisionStuckTimer = 0;
+
+        public static GunType gunType = GunType.Rifle;
 
         public enum Direction
         {
@@ -43,6 +47,16 @@ namespace Tight_Budget
             Left
         }
 
+        public enum GunType
+        {
+            None,
+            Pistol,
+            Shotgun,
+            Rifle,
+            Minigun,
+        }
+
+
         public override void Initialize()
         {
             hitbox.Width = PlayerWidth;
@@ -51,6 +65,16 @@ namespace Tight_Budget
 
         public override void Update()
         {
+            if (Main.playerHealth <= 0)
+            {
+                Main.FadeOut();
+                if (Main.fadeProgress >= 1f)
+                {
+                    Main.gameState = Main.GameState.GameOver;
+                }
+                return;
+            }
+
             if (shootTimer > 0)
                 shootTimer--;
             if (immunityTimer > 0)
@@ -94,9 +118,20 @@ namespace Tight_Budget
             {
                 //if (!DetectTileCollisions(playerCenter + (velocity * new Vector2(3.3f, 5f))))
                 walking = true;
+                collisionStuckTimer = 0;
             }
-
-            Main.debugValue = Map.activeMapIndex.ToString();
+            else
+            {
+                if (DetectTileCollisions(position + new Vector2(0f, 17f)))
+                {
+                    collisionStuckTimer++;
+                }
+                if (collisionStuckTimer >= 3 * 60)
+                {
+                    if (!DetectTileCollisions(position))
+                        position += new Vector2(0f, 0.3f);
+                }
+            }
 
             position += velocity;
             playerCenter = position + new Vector2(PlayerWidth / 2f, PlayerHeight / 2f);
@@ -104,7 +139,11 @@ namespace Tight_Budget
             hitbox.Y = (int)position.Y;
             AnimatePlayer();
             Main.UpdateCamera(position);
-            UpdateGunPosition();
+
+            Vector2 directionToMouse = Main.mouseMapPos - position;
+            directionToMouse.Normalize();
+            UpdateGunPosition(directionToMouse);
+            HandleShooting(directionToMouse);
         }
 
         public void AnimatePlayer()
@@ -137,43 +176,91 @@ namespace Tight_Budget
             animRect = new Rectangle(0, frame * frameHeight, PlayerWidth, PlayerHeight);
         }
 
-        private void UpdateGunPosition()
+        private void UpdateGunPosition(Vector2 directionToMouse)
         {
-            Vector2 direction = Main.mousePos - position;
-            direction.Normalize();
-            Vector2 gunDirection = direction * GunRadius;
+            Vector2 gunDirection = directionToMouse * GunRadius;
             gunPosition = position + new Vector2(PlayerWidth / 2f, PlayerHeight / 2f) + gunDirection;
             gunRotation = (float)Math.Atan2(gunDirection.Y, gunDirection.X);
+        }
 
-            if (Mouse.GetState().LeftButton == ButtonState.Pressed && shootTimer <= 0)
+        private void HandleShooting(Vector2 directionToMouse)
+        {
+            if (Mouse.GetState().LeftButton == ButtonState.Pressed && gunType != GunType.None && shootTimer <= 0)
             {
-                shootTimer += 30;
-                Vector2 shootVelocity = direction * 3.5f;
-                Bullet.NewBullet(gunPosition, shootVelocity);
-                gunShotSound.Play();
+                Vector2 shootVelocity = directionToMouse;
+                switch (gunType)
+                {
+                    case GunType.Pistol:
+                        shootTimer += 45;
+                        shootVelocity *= 3.5f;
+                        Bullet.NewBullet(gunPosition, shootVelocity);
+                        break;
+                    case GunType.Shotgun:
+                        shootTimer += 80;
+
+                        float spreadAngle = (float)MathHelper.ToRadians(20f);
+                        for (int i = 0; i < 4; i++)
+                        {
+                            float angleSpread = i * (spreadAngle / 4);
+                            float shootAngle = (float)Math.Atan2(shootVelocity.Y + angleSpread, shootVelocity.X + angleSpread);
+                            Vector2 velocity = new Vector2((float)Math.Cos(shootAngle), (float)Math.Sin(shootAngle));
+                            velocity.Normalize();
+                            velocity *= 4f;
+                            Bullet.NewBullet(gunPosition, velocity);
+                        }
+                        break;
+                    case GunType.Rifle:
+                        shootTimer += 15;
+                        shootVelocity *= 4f;
+                        Bullet.NewBullet(gunPosition, shootVelocity);
+                        break;
+                    case GunType.Minigun:
+                        shootTimer += 6;
+                        shootVelocity *= 5f;
+                        Bullet.NewBullet(gunPosition, shootVelocity);
+                        break;
+                }
+                gunShotSounds[(int)gunType - 1].Play();
             }
         }
 
         public override void HandleCollisions(CollisionBody collider, CollisionType colliderType)
         {
-            if (immunityTimer <= 0 && collider is Enemy)
+            if (immunityTimer > 0)
+                return;
+
+            if (collider is Enemy)
             {
                 Main.playerHealth -= 1;
                 immunityTimer += 30;
+            }
+            if (collider is TrashTankBullet)
+            {
+                Main.playerHealth -= 1;
+                immunityTimer += 30;
+                collider.DestroyInstance();
             }
         }
 
         public override void Draw(SpriteBatch spriteBatch)
         {
-            Vector2 playerGunOrigin = new Vector2(playerGunTexture.Width / 2f, playerGunTexture.Height / 2f);
-            if (gunPosition.Y > position.Y)
+            if (currentSheet == null)
+                return;
+
+            Vector2 playerGunOrigin = new Vector2(playerGunTextures[(int)gunType].Width / 2f, playerGunTextures[(int)gunType].Height / 2f);
+            SpriteEffects gunEffect = SpriteEffects.None;
+            if (gunPosition.X < position.X)
             {
-                spriteBatch.Draw(playerGunTexture, gunPosition - Main.cameraPosition, null, Color.White, gunRotation, playerGunOrigin, 1f, SpriteEffects.None, 0f);
+                gunEffect = SpriteEffects.FlipVertically;
+            }
+            if (gunPosition.Y < position.Y)
+            {
+                spriteBatch.Draw(playerGunTextures[(int)gunType], gunPosition - Main.cameraPosition, null, Color.White, gunRotation, playerGunOrigin, 1f, gunEffect, 0f);
             }
             spriteBatch.Draw(currentSheet, position - Main.cameraPosition, animRect, Color.White);
-            if (gunPosition.Y <= position.Y)
+            if (gunPosition.Y >= position.Y)
             {
-                spriteBatch.Draw(playerGunTexture, gunPosition - Main.cameraPosition, null, Color.White, gunRotation, playerGunOrigin, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(playerGunTextures[(int)gunType], gunPosition - Main.cameraPosition, null, Color.White, gunRotation, playerGunOrigin, 1f, gunEffect, 0f);
             }
         }
     }

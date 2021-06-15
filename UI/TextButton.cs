@@ -4,44 +4,52 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Tight_Budget.UI
 {
-    public class Button : UIObject
+    public class TextButton : UIObject
     {
         public Texture2D texture;
-        public Texture2D iconTexture;
         public Color drawColor;
         public Vector2 buttonPosition;
         public bool buttonPressed = false;
         public bool buttonHover = false;
         public int buttonWidth = 0;
         public int buttonHeight = 0;
+        public string buttonText;
 
         private float scale;
         private float defaultScale;
         private float hoverScale;
         private Rectangle hitbox;
+        private Color idleColor;
+        private Color hoverColor;
+        private bool drawPanel;
 
-        public Button(Texture2D iconTexture, int width, int height, Vector2 position, float hoverScale, float defaultScale)
+        public TextButton(string text, Vector2 position, float hoverScale, float defaultScale, Color idleColor, Color hoverColor, bool drawPanel = false)
         {
-            this.iconTexture = iconTexture;
-            buttonWidth = (int)(width * defaultScale);
-            buttonHeight = (int)(height * defaultScale);
-            hitbox = new Rectangle((int)position.X - (buttonWidth / 2), (int)position.Y - (buttonHeight / 2), buttonWidth, buttonHeight);
+            buttonText = text;
+            Vector2 size = Main.mainFont.MeasureString(text) * defaultScale;
+            buttonWidth = (int)size.X;
+            buttonHeight = (int)size.Y;
+            hitbox = new Rectangle((int)position.X, (int)position.Y, buttonWidth, buttonHeight);
             this.defaultScale = defaultScale;
             this.hoverScale = hoverScale;
             buttonPosition = position;
-            texture = Main.CreatePanelTexture(width, height, 1, Color.Black, Color.White);
+            this.idleColor = idleColor;
+            this.hoverColor = hoverColor;
+            texture = Main.CreatePanelTexture(buttonWidth + 7, buttonHeight, 1, Color.Black, Color.White);
+            this.drawPanel = drawPanel;
         }
 
         public override void Update()
         {
             scale = defaultScale;
-            drawColor = Color.White;
+            drawColor = idleColor;
             buttonHover = false;
             buttonPressed = false;
             if (hitbox.Contains(Main.mouseScreenPos.ToPoint()))
             {
                 scale = hoverScale;
                 buttonHover = true;
+                drawColor = hoverColor;
                 if (Mouse.GetState().LeftButton == ButtonState.Pressed)
                 {
                     buttonPressed = true;
@@ -55,11 +63,10 @@ namespace Tight_Budget.UI
 
         public override void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, buttonPosition, null, drawColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+            if (drawPanel)
+                spriteBatch.Draw(texture, buttonPosition, null, drawColor, 0f, Vector2.Zero, scale + 0.3f, SpriteEffects.None, 0f);
 
-            Vector2 iconPosition = buttonPosition + new Vector2(buttonWidth / 2f, buttonHeight / 2f);
-            Vector2 iconOrigin = new Vector2(iconTexture.Width / 2f, iconTexture.Height / 2f);
-            spriteBatch.Draw(iconTexture, iconPosition, null, drawColor, 0f, iconOrigin, scale, SpriteEffects.None, 0f);
+            spriteBatch.DrawString(Main.mainFont, buttonText, buttonPosition, drawColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
         }
     }
 }

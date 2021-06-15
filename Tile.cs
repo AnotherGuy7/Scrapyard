@@ -32,7 +32,7 @@ namespace Tight_Budget
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            if (Vector2.Distance(position, Main.player.position) >= (Main.halfScreenWidth * 2f) + 20f)
+            if (Vector2.Distance(position, Main.player.position) >= (Main.halfScreenWidth * 2f) + 50f)
                 return;
 
             Vector2 tileOrigin = new Vector2(8f, 8f);
